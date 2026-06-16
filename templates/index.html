@@ -378,6 +378,12 @@
             border-color: rgba(29, 155, 240, 0.3);
         }
 
+        .action-btn.copy-btn:hover {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
         .card-body {
             color: #d1d5db;
             font-size: 0.95rem;
@@ -816,6 +822,9 @@
             </div>
         </div>
         <div class="actions-section">
+            <button class="btn btn-refresh" id="exportBtn" onclick="exportToCSV()" title="Export current view to CSV">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+            </button>
             <button class="btn btn-refresh" id="refreshBtn" onclick="fetchReleaseNotes()">
                 <i class="fa-solid fa-arrows-rotate spinner"></i> Refresh Feed
             </button>
@@ -1013,6 +1022,9 @@
                             <a href="${note.link}" target="_blank" class="action-btn" title="View Source Link">
                                 <i class="fa-solid fa-arrow-up-right-from-square"></i>
                             </a>
+                            <button class="action-btn copy-btn" onclick="copyToClipboard('${note.id}')" title="Copy to Clipboard">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
                             <button class="action-btn tweet-btn" onclick="openTweetModal('${note.id}')" title="Tweet about this update">
                                 <i class="fa-brands fa-x-twitter"></i>
                             </button>
@@ -1127,6 +1139,79 @@
         
         closeTweetModal();
         showToast("Twitter Composer opened!", "success");
+    }
+
+    function copyToClipboard(itemId) {
+        const item = releaseNotesData.find(n => n.id === itemId);
+        if (!item) return;
+        
+        const textToCopy = `BigQuery Release Note [${item.date}] (${item.type}):\n${item.content_text}\n\nDetails: ${item.link}`;
+        
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showToast("Copied to clipboard!", "success");
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+            showToast("Failed to copy text.", "error");
+        });
+    }
+
+    function exportToCSV() {
+        const searchQuery = document.getElementById("searchInput").value.toLowerCase();
+        
+        // Apply current search and category filters
+        const filteredNotes = releaseNotesData.filter(note => {
+            const matchesSearch = note.content_text.toLowerCase().includes(searchQuery) ||
+                                  note.type.toLowerCase().includes(searchQuery) ||
+                                  note.date.toLowerCase().includes(searchQuery);
+                                  
+            const matchesFilter = currentFilter === 'all' || 
+                                  note.type.toLowerCase() === currentFilter;
+                                  
+            return matchesSearch && matchesFilter;
+        });
+
+        if (filteredNotes.length === 0) {
+            showToast("No data to export.", "error");
+            return;
+        }
+
+        // Formulate CSV
+        const headers = ["ID", "Date", "Type", "Link", "Content"];
+        const csvRows = [headers.join(",")];
+
+        filteredNotes.forEach(note => {
+            // Escape quotes and double quotes for clean CSV
+            const cleanText = note.content_text.replace(/"/g, '""');
+            const cleanLink = note.link.replace(/"/g, '""');
+            const cleanType = note.type.replace(/"/g, '""');
+            const cleanDate = note.date.replace(/"/g, '""');
+            
+            const row = [
+                `"${note.id}"`,
+                `"${cleanDate}"`,
+                `"${cleanType}"`,
+                `"${cleanLink}"`,
+                `"${cleanText}"`
+            ];
+            csvRows.push(row.join(","));
+        });
+
+        const csvString = csvRows.join("\n");
+        const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `bigquery_release_notes_${currentFilter}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("CSV file downloaded successfully!", "success");
+        } else {
+            showToast("Export failed in this browser.", "error");
+        }
     }
 </script>
 
