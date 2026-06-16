@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Explorer</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --primary-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            --accent-glow: rgba(139, 92, 246, 0.15);
+            --font-display: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', sans-serif;
+            
+            /* Tag Colors */
+            --color-feature: #10b981;
+            --color-feature-bg: rgba(16, 185, 129, 0.15);
+            --color-issue: #f59e0b;
+            --color-issue-bg: rgba(245, 158, 11, 0.15);
+            --color-deprecation: #ef4444;
+            --color-deprecation-bg: rgba(239, 68, 68, 0.15);
+            --color-general: #3b82f6;
+            --color-general-bg: rgba(59, 130, 246, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(29, 78, 216, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(109, 40, 217, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 2rem;
+            background: rgba(17, 24, 39, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: fadeInDown 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-icon {
+            font-size: 2.2rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 2px 8px rgba(139, 92, 246, 0.3));
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.6rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, #ffffff, #d1d5db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-section p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .actions-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Controls Panel */
+        .controls-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.75rem 1rem 0.75rem 2.8rem;
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            color: var(--text-secondary);
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--primary-gradient);
+            color: #ffffff;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 1.25rem;
+            color: #ffffff;
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.35);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-refresh {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            box-shadow: none;
+        }
+
+        .btn-refresh:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        .loading .spinner {
+            display: inline-block;
+        }
+
+        /* Timeline / Cards Section */
+        .timeline {
+            position: relative;
+            margin-top: 1rem;
+        }
+
+        .date-group {
+            margin-bottom: 2.5rem;
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .date-header {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding-left: 0.5rem;
+        }
+
+        .date-header::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .update-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .update-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--color-general);
+        }
+
+        /* Card color-coding based on type */
+        .update-card.type-feature::before { background-color: var(--color-feature); }
+        .update-card.type-issue::before { background-color: var(--color-issue); }
+        .update-card.type-deprecation::before { background-color: var(--color-deprecation); }
+
+        .update-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 15px var(--accent-glow);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .type-tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .tag-feature {
+            background: var(--color-feature-bg);
+            color: var(--color-feature);
+        }
+
+        .tag-issue {
+            background: var(--color-issue-bg);
+            color: var(--color-issue);
+        }
+
+        .tag-deprecation {
+            background: var(--color-deprecation-bg);
+            color: var(--color-deprecation);
+        }
+
+        .tag-general {
+            background: var(--color-general-bg);
+            color: var(--color-general);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .action-btn.tweet-btn:hover {
+            background: rgba(29, 155, 240, 0.15);
+            color: #1d9bf0;
+            border-color: rgba(29, 155, 240, 0.3);
+        }
+
+        .card-body {
+            color: #d1d5db;
+            font-size: 0.95rem;
+        }
+
+        .card-body p {
+            margin-bottom: 0.75rem;
+        }
+
+        .card-body p:last-child {
+            margin-bottom: 0;
+        }
+
+        .card-body ul, .card-body ol {
+            padding-left: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .card-body li {
+            margin-bottom: 0.25rem;
+        }
+
+        .card-body a {
+            color: #60a5fa;
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(96, 165, 250, 0.4);
+            transition: border-color 0.2s ease;
+        }
+
+        .card-body a:hover {
+            border-bottom-style: solid;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 550px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(139, 92, 246, 0.1);
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            position: relative;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .modal-title i {
+            color: #1d9bf0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .tweet-composer-area {
+            position: relative;
+        }
+
+        .tweet-textarea {
+            width: 100%;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1rem;
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            resize: none;
+            transition: all 0.3s ease;
+        }
+
+        .tweet-textarea:focus {
+            outline: none;
+            border-color: #1d9bf0;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 12px rgba(29, 155, 240, 0.2);
+        }
+
+        .composer-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .char-counter {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .char-counter.warning {
+            color: #f59e0b;
+        }
+
+        .char-counter.danger {
+            color: #ef4444;
+        }
+
+        .circle-progress {
+            width: 20px;
+            height: 20px;
+            transform: rotate(-90deg);
+        }
+
+        .circle-progress circle {
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .circle-progress .bg {
+            stroke: rgba(255, 255, 255, 0.1);
+        }
+
+        .circle-progress .progress {
+            stroke: #1d9bf0;
+            stroke-linecap: round;
+            transition: stroke-dasharray 0.3s ease;
+        }
+
+        /* Twitter Mockup Card */
+        .twitter-mockup {
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 1.25rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .mockup-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .mockup-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            flex: 1;
+        }
+
+        .mockup-author {
+            display: flex;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+        }
+
+        .mockup-name {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .mockup-handle {
+            color: var(--text-secondary);
+        }
+
+        .mockup-text {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .mockup-card-link {
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mockup-card-image {
+            height: 120px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .mockup-card-image::before {
+            content: 'Google Cloud BigQuery';
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.2rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mockup-card-info {
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+
+        .mockup-card-domain {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .mockup-card-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .mockup-card-description {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .modal-action-btn {
+            background: #1d9bf0;
+            color: white;
+            border: none;
+            border-radius: 9999px;
+            font-family: var(--font-body);
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+            box-shadow: 0 4px 12px rgba(29, 155, 240, 0.25);
+        }
+
+        .modal-action-btn:hover {
+            background: #1a8cd8;
+        }
+
+        .modal-action-btn:disabled {
+            background: rgba(29, 155, 240, 0.5);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 1100;
+        }
+
+        .toast {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--color-general);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            color: var(--text-primary);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success { border-left-color: var(--color-feature); }
+        .toast.error { border-left-color: var(--color-deprecation); }
+
+        /* Animations */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            .actions-section {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .controls-card {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-box {
+                min-width: 100%;
+            }
+            .filter-group {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Header -->
+    <header>
+        <div class="logo-section">
+            <i class="fa-solid fa-database logo-icon"></i>
+            <div>
+                <h1>BigQuery Release Explorer</h1>
+                <p>Track, analyze, and share Google Cloud BigQuery updates</p>
+            </div>
+        </div>
+        <div class="actions-section">
+            <button class="btn btn-refresh" id="refreshBtn" onclick="fetchReleaseNotes()">
+                <i class="fa-solid fa-arrows-rotate spinner"></i> Refresh Feed
+            </button>
+        </div>
+    </header>
+
+    <!-- Controls / Filters -->
+    <div class="controls-card">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search update content..." oninput="filterReleaseNotes()">
+        </div>
+        <div class="filter-group">
+            <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">All Updates</button>
+            <button class="filter-btn" data-filter="feature" onclick="setFilter('feature')">Features</button>
+            <button class="filter-btn" data-filter="issue" onclick="setFilter('issue')">Issues</button>
+            <button class="filter-btn" data-filter="deprecation" onclick="setFilter('deprecation')">Deprecations</button>
+        </div>
+    </div>
+
+    <!-- Timeline of updates -->
+    <div class="timeline" id="timelineContainer">
+        <!-- Will be dynamically populated -->
+        <div class="empty-state">
+            <i class="fa-solid fa-spinner fa-spin empty-icon"></i>
+            <h3>Loading release notes...</h3>
+            <p>Fetching data from Google Cloud feed</p>
+        </div>
+    </div>
+</div>
+
+<!-- Tweet Modal -->
+<div class="modal-overlay" id="tweetModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 class="modal-title"><i class="fa-brands fa-x-twitter"></i> Compose Post</h3>
+            <button class="modal-close" onclick="closeTweetModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <div class="tweet-composer-area">
+            <textarea class="tweet-textarea" id="tweetTextarea" oninput="updateTweetLength()"></textarea>
+            <div class="composer-footer">
+                <div class="char-counter" id="charCounter">
+                    <svg class="circle-progress" id="progressCircle">
+                        <circle class="bg" cx="10" cy="10" r="8"></circle>
+                        <circle class="progress" cx="10" cy="10" r="8"></circle>
+                    </svg>
+                    <span id="charText">280</span>
+                </div>
+                <button class="modal-action-btn" id="tweetSubmitBtn" onclick="submitTweet()">
+                    <i class="fa-brands fa-x-twitter"></i> Post to X
+                </button>
+            </div>
+        </div>
+
+        <div class="twitter-mockup">
+            <div class="mockup-avatar">BQ</div>
+            <div class="mockup-content">
+                <div class="mockup-author">
+                    <span class="mockup-name">BigQuery Releases</span>
+                    <span class="mockup-handle">@BigQueryNotes</span>
+                </div>
+                <div class="mockup-text" id="mockupText">
+                    Live tweet composer preview.
+                </div>
+                <div class="mockup-card-link">
+                    <div class="mockup-card-image"></div>
+                    <div class="mockup-card-info">
+                        <span class="mockup-card-domain">cloud.google.com</span>
+                        <span class="mockup-card-title">Google Cloud BigQuery Release Notes</span>
+                        <span class="mockup-card-description" id="mockupCardDesc">Track recent updates and releases</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+    let releaseNotesData = [];
+    let currentFilter = 'all';
+    let activeTweetItem = null;
+    const MAX_TWEET_CHARS = 280;
+
+    // Fetch releases on page load
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchReleaseNotes();
+    });
+
+    function showToast(message, type = 'info') {
+        const container = document.getElementById("toastContainer");
+        const toast = document.createElement("div");
+        toast.className = `toast ${type}`;
+        
+        let icon = '<i class="fa-solid fa-circle-info"></i>';
+        if (type === 'success') icon = '<i class="fa-solid fa-circle-check"></i>';
+        if (type === 'error') icon = '<i class="fa-solid fa-circle-exclamation"></i>';
+        
+        toast.innerHTML = `${icon} <span>${message}</span>`;
+        container.appendChild(toast);
+        
+        setTimeout(() => toast.classList.add("show"), 10);
+        
+        setTimeout(() => {
+            toast.classList.remove("show");
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    async function fetchReleaseNotes() {
+        const refreshBtn = document.getElementById("refreshBtn");
+        refreshBtn.classList.add("loading");
+        
+        try {
+            const response = await fetch("/api/release-notes");
+            if (!response.ok) throw new Error("Server error fetching feed");
+            const data = await response.json();
+            
+            releaseNotesData = data;
+            renderReleaseNotes();
+            showToast("Successfully fetched the latest release notes!", "success");
+        } catch (error) {
+            console.error(error);
+            showToast("Failed to fetch release notes: " + error.message, "error");
+            renderEmptyState("Failed to load data from feed.");
+        } finally {
+            refreshBtn.classList.remove("loading");
+        }
+    }
+
+    function renderEmptyState(message = "No updates found.") {
+        const container = document.getElementById("timelineContainer");
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-solid fa-circle-exclamation empty-icon"></i>
+                <h3>No Release Notes</h3>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+
+    function renderReleaseNotes() {
+        const container = document.getElementById("timelineContainer");
+        const searchQuery = document.getElementById("searchInput").value.toLowerCase();
+        
+        // Filter notes
+        const filteredNotes = releaseNotesData.filter(note => {
+            const matchesSearch = note.content_text.toLowerCase().includes(searchQuery) ||
+                                  note.type.toLowerCase().includes(searchQuery) ||
+                                  note.date.toLowerCase().includes(searchQuery);
+                                  
+            const matchesFilter = currentFilter === 'all' || 
+                                  note.type.toLowerCase() === currentFilter;
+                                  
+            return matchesSearch && matchesFilter;
+        });
+
+        if (filteredNotes.length === 0) {
+            renderEmptyState("Try adjusting your filters or search keywords.");
+            return;
+        }
+
+        // Group notes by date
+        const grouped = {};
+        filteredNotes.forEach(note => {
+            if (!grouped[note.date]) grouped[note.date] = [];
+            grouped[note.date].push(note);
+        });
+
+        container.innerHTML = "";
+
+        // Build HTML
+        Object.entries(grouped).forEach(([date, notes]) => {
+            const dateGroup = document.createElement("div");
+            dateGroup.className = "date-group";
+            
+            const dateHeader = document.createElement("div");
+            dateHeader.className = "date-header";
+            dateHeader.innerText = date;
+            dateGroup.appendChild(dateHeader);
+            
+            notes.forEach(note => {
+                const typeClass = `type-${note.type.toLowerCase()}`;
+                const tagClass = `tag-${note.type.toLowerCase()}`;
+                
+                const card = document.createElement("div");
+                card.className = `update-card ${typeClass}`;
+                card.innerHTML = `
+                    <div class="card-header">
+                        <span class="type-tag ${tagClass}">${note.type}</span>
+                        <div class="card-actions">
+                            <a href="${note.link}" target="_blank" class="action-btn" title="View Source Link">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </a>
+                            <button class="action-btn tweet-btn" onclick="openTweetModal('${note.id}')" title="Tweet about this update">
+                                <i class="fa-brands fa-x-twitter"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        ${note.content_html}
+                    </div>
+                `;
+                dateGroup.appendChild(card);
+            });
+            
+            container.appendChild(dateGroup);
+        });
+    }
+
+    function setFilter(filterType) {
+        currentFilter = filterType;
+        
+        // Update active filter button state
+        document.querySelectorAll(".filter-btn").forEach(btn => {
+            if (btn.getAttribute("data-filter") === filterType) {
+                btn.classList.add("active");
+            } else {
+                btn.classList.remove("active");
+            }
+        });
+        
+        renderReleaseNotes();
+    }
+
+    function filterReleaseNotes() {
+        renderReleaseNotes();
+    }
+
+    function openTweetModal(itemId) {
+        const item = releaseNotesData.find(n => n.id === itemId);
+        if (!item) return;
+        
+        activeTweetItem = item;
+        
+        // Formulate clean draft tweet
+        // Structure: "BigQuery Release Note ({Date} - {Type}): {Description} {Link}"
+        const textLimit = 150;
+        let cleanDesc = item.content_text.replace(/\s+/g, ' ');
+        if (cleanDesc.length > textLimit) {
+            cleanDesc = cleanDesc.substring(0, textLimit) + "...";
+        }
+        
+        const tweetText = `BigQuery Update [${item.date}]:\n\n📢 ${cleanDesc}\n\nRead more details here: ${item.link}`;
+        
+        document.getElementById("tweetTextarea").value = tweetText;
+        document.getElementById("mockupCardDesc").innerText = item.content_text;
+        
+        updateTweetLength();
+        
+        document.getElementById("tweetModal").classList.add("active");
+    }
+
+    function closeTweetModal() {
+        document.getElementById("tweetModal").classList.remove("active");
+        activeTweetItem = null;
+    }
+
+    function updateTweetLength() {
+        const textarea = document.getElementById("tweetTextarea");
+        const charText = document.getElementById("charText");
+        const charCounter = document.getElementById("charCounter");
+        const submitBtn = document.getElementById("tweetSubmitBtn");
+        const mockupText = document.getElementById("mockupText");
+        
+        const len = textarea.value.length;
+        const remaining = MAX_TWEET_CHARS - len;
+        
+        // Update Character Display Counter
+        charText.innerText = remaining;
+        mockupText.innerText = textarea.value;
+        
+        // SVG progress indicator
+        const circle = document.querySelector("#progressCircle .progress");
+        const r = 8;
+        const circ = 2 * Math.PI * r;
+        const percent = Math.min(len / MAX_TWEET_CHARS, 1);
+        const strokeDasharray = `${circ * percent} ${circ * (1 - percent)}`;
+        circle.style.strokeDasharray = strokeDasharray;
+        
+        // Highlight states depending on remaining count
+        charCounter.classList.remove("warning", "danger");
+        submitBtn.disabled = (len === 0);
+        
+        if (remaining <= 20 && remaining >= 0) {
+            charCounter.classList.add("warning");
+            circle.style.stroke = "#f59e0b";
+        } else if (remaining < 0) {
+            charCounter.classList.add("danger");
+            circle.style.stroke = "#ef4444";
+            submitBtn.disabled = true;
+        } else {
+            circle.style.stroke = "#1d9bf0";
+        }
+    }
+
+    function submitTweet() {
+        const textarea = document.getElementById("tweetTextarea");
+        const text = textarea.value;
+        
+        if (text.length === 0 || text.length > MAX_TWEET_CHARS) return;
+        
+        // Open Twitter Web Intent URL in a new window
+        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+        window.open(url, "_blank");
+        
+        closeTweetModal();
+        showToast("Twitter Composer opened!", "success");
+    }
+</script>
+
+</body>
+</html>
