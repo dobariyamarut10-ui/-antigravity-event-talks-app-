@@ -411,6 +411,19 @@
             font-size: 0.95rem;
         }
 
+        mark {
+            background: rgba(245, 158, 11, 0.3);
+            color: #f59e0b;
+            padding: 0 2px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        body.light-theme mark {
+            background: rgba(245, 158, 11, 0.2);
+            color: #d97706;
+        }
+
         .card-body p {
             margin-bottom: 0.75rem;
         }
@@ -1072,7 +1085,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        ${note.content_html}
+                        ${highlightSearchText(note.content_html, searchQuery)}
                     </div>
                 `;
                 dateGroup.appendChild(card);
@@ -1180,6 +1193,49 @@
         
         closeTweetModal();
         showToast("Twitter Composer opened!", "success");
+    }
+
+    function highlightSearchText(htmlContent, query) {
+        if (!query) return htmlContent;
+        
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = htmlContent;
+        
+        const walk = document.createTreeWalker(tempDiv, NodeFilter.SHOW_TEXT, null, false);
+        const textNodes = [];
+        let node;
+        while (node = walk.nextNode()) {
+            textNodes.push(node);
+        }
+        
+        // Escape query regex characters
+        const escapedQuery = query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(`(${escapedQuery})`, "gi");
+        
+        textNodes.forEach(textNode => {
+            const parent = textNode.parentNode;
+            if (parent && parent.tagName !== "MARK" && parent.tagName !== "SCRIPT" && parent.tagName !== "STYLE") {
+                const text = textNode.nodeValue;
+                if (regex.test(text)) {
+                    const fragments = document.createDocumentFragment();
+                    const parts = text.split(regex);
+                    
+                    parts.forEach(part => {
+                        if (part.toLowerCase() === query.toLowerCase()) {
+                            const mark = document.createElement("mark");
+                            mark.textContent = part;
+                            fragments.appendChild(mark);
+                        } else {
+                            fragments.appendChild(document.createTextNode(part));
+                        }
+                    });
+                    
+                    parent.replaceChild(fragments, textNode);
+                }
+            }
+        });
+        
+        return tempDiv.innerHTML;
     }
 
     function copyToClipboard(itemId) {
