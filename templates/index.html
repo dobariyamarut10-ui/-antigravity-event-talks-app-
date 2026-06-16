@@ -14,6 +14,7 @@
     <style>
         :root {
             --bg-color: #0b0f19;
+            --header-bg: rgba(17, 24, 39, 0.4);
             --card-bg: rgba(17, 24, 39, 0.7);
             --border-color: rgba(255, 255, 255, 0.08);
             --text-primary: #f3f4f6;
@@ -22,6 +23,11 @@
             --accent-glow: rgba(139, 92, 246, 0.15);
             --font-display: 'Outfit', sans-serif;
             --font-body: 'Plus Jakarta Sans', sans-serif;
+            --h1-gradient: linear-gradient(to right, #ffffff, #d1d5db);
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-bg-focus: rgba(255, 255, 255, 0.08);
+            --card-body-color: #d1d5db;
+            --modal-bg: #0f172a;
             
             /* Tag Colors */
             --color-feature: #10b981;
@@ -32,6 +38,22 @@
             --color-deprecation-bg: rgba(239, 68, 68, 0.15);
             --color-general: #3b82f6;
             --color-general-bg: rgba(59, 130, 246, 0.15);
+        }
+
+        body.light-theme {
+            --bg-color: #f3f4f7;
+            --header-bg: rgba(255, 255, 255, 0.7);
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --border-color: rgba(0, 0, 0, 0.08);
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --accent-glow: rgba(59, 130, 246, 0.08);
+            --primary-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            --h1-gradient: linear-gradient(to right, #1f2937, #4b5563);
+            --input-bg: rgba(0, 0, 0, 0.04);
+            --input-bg-focus: rgba(0, 0, 0, 0.06);
+            --card-body-color: #374151;
+            --modal-bg: #ffffff;
         }
 
         * {
@@ -64,7 +86,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 1.5rem 2rem;
-            background: rgba(17, 24, 39, 0.4);
+            background: var(--header-bg);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border-color);
@@ -93,7 +115,7 @@
             font-weight: 700;
             font-size: 1.6rem;
             letter-spacing: -0.5px;
-            background: linear-gradient(to right, #ffffff, #d1d5db);
+            background: var(--h1-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -144,7 +166,7 @@
 
         .search-input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 0.75rem 1rem 0.75rem 2.8rem;
@@ -157,7 +179,7 @@
         .search-input:focus {
             outline: none;
             border-color: #3b82f6;
-            background: rgba(255, 255, 255, 0.08);
+            background: var(--input-bg-focus);
             box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
         }
 
@@ -385,7 +407,7 @@
         }
 
         .card-body {
-            color: #d1d5db;
+            color: var(--card-body-color);
             font-size: 0.95rem;
         }
 
@@ -442,7 +464,7 @@
         }
 
         .modal-card {
-            background: #0f172a;
+            background: var(--modal-bg);
             border: 1px solid var(--border-color);
             border-radius: 24px;
             width: 90%;
@@ -500,7 +522,7 @@
         .tweet-textarea {
             width: 100%;
             height: 120px;
-            background: rgba(255, 255, 255, 0.04);
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 1rem;
@@ -566,7 +588,7 @@
         .twitter-mockup {
             border: 1px solid var(--border-color);
             border-radius: 16px;
-            background: rgba(255, 255, 255, 0.02);
+            background: var(--input-bg);
             padding: 1.25rem;
             display: flex;
             gap: 0.75rem;
@@ -822,6 +844,9 @@
             </div>
         </div>
         <div class="actions-section">
+            <button class="action-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
+                <i class="fa-solid fa-sun"></i>
+            </button>
             <button class="btn btn-refresh" id="exportBtn" onclick="exportToCSV()" title="Export current view to CSV">
                 <i class="fa-solid fa-file-csv"></i> Export CSV
             </button>
@@ -912,10 +937,26 @@
     let activeTweetItem = null;
     const MAX_TWEET_CHARS = 280;
 
-    // Fetch releases on page load
+    // Fetch releases on page load & initialize theme
     document.addEventListener("DOMContentLoaded", () => {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "light") {
+            document.body.classList.add("light-theme");
+            document.getElementById("themeToggleBtn").innerHTML = '<i class="fa-solid fa-moon"></i>';
+        }
         fetchReleaseNotes();
     });
+
+    function toggleTheme() {
+        const body = document.body;
+        body.classList.toggle("light-theme");
+        
+        const btn = document.getElementById("themeToggleBtn");
+        const isLight = body.classList.contains("light-theme");
+        
+        btn.innerHTML = isLight ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+        localStorage.setItem("theme", isLight ? "light" : "dark");
+    }
 
     function showToast(message, type = 'info') {
         const container = document.getElementById("toastContainer");
